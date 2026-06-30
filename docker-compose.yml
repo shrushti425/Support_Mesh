@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: supportmesh_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: supportmesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d supportmesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: supportmesh_app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/supportmesh
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - GROQ_BASE_URL=https://api.groq.com/openai/v1
+      - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
+      - WEBHOOK_URL=http://app:8000/tickets/webhook-demo-endpoint
+      - PORT=8000
+      - HOST=0.0.0.0
+    volumes:
+      - .:/code
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

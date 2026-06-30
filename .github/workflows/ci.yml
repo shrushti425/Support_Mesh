@@ -1,0 +1,33 @@
+name: SupportMesh CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Verify Code Syntax and Imports
+      run: |
+        python -m py_compile app/main.py app/config.py app/database.py app/models.py app/schemas.py
+        python -m py_compile app/routes/tickets.py app/routes/dashboard.py
+        python -m py_compile app/services/rag.py app/services/llm.py app/services/webhook.py
+        python -m py_compile scripts/embed_knowledge.py scripts/seed.py
